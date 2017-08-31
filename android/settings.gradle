@@ -1,0 +1,3 @@
+rootProject.name = 'GoTennaReactNative'
+
+include ':app', ':gotenna-public-sdk'

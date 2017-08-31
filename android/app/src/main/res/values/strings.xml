@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">GoTennaReactNative</string>
+    <string name="no_bluetooth_support_message">Your Device does not support Bluetooth. This application will not work with your device!</string>
+</resources>
