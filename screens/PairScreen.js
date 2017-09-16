@@ -57,6 +57,18 @@ export default class PairScreen extends Component {
                 </Button>
               }
 
+              {applicationState.paired &&
+                <Button style={{margin: 10}} block info disabled={applicationState.scanning} onPress={() => applicationState.echo() }>
+                    <Text>Echo</Text>
+                </Button>
+              }
+
+              {applicationState.paired &&
+                <Button style={{margin: 10}} block danger disabled={applicationState.scanning} onPress={() => applicationState.disconnect() }>
+                    <Text>Disconnect</Text>
+                </Button>
+              }
+
           </Content>
       </Container>
     );

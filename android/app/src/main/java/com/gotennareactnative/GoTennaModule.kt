@@ -13,15 +13,18 @@ import android.support.v4.content.ContextCompat
 import android.util.Log
 import android.widget.Toast
 import com.facebook.react.bridge.*
+import com.facebook.react.modules.core.DeviceEventManagerModule
+
+import com.gotenna.sdk.GoTenna
 import com.gotenna.sdk.bluetooth.BluetoothAdapterManager
 import com.gotenna.sdk.bluetooth.GTConnectionManager
-import com.facebook.react.modules.core.DeviceEventManagerModule
-import com.gotenna.sdk.GoTenna
+import com.gotenna.sdk.commands.GTCommand
 import com.gotenna.sdk.commands.GTCommandCenter
 import com.gotenna.sdk.commands.GTError
 import com.gotenna.sdk.exceptions.GTInvalidAppTokenException
 import com.gotenna.sdk.interfaces.GTErrorListener
-import com.gotenna.sdk.responses.SystemInfoResponseData
+import com.gotenna.sdk.responses.GTResponse
+import com.gotenna.sdk.types.GTDataTypes
 
 /**
  * Created by aaronblondeau on 8/30/17.
@@ -30,6 +33,7 @@ import com.gotenna.sdk.responses.SystemInfoResponseData
 class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJavaModule(reactContext), GTConnectionManager.GTConnectionListener, LifecycleEventListener {
 
     private var willRememberGotenna = false
+    private var meshDevice = true
 
     private val SCAN_TIMEOUT = 25000 // 25 seconds
     private val BLUETOOTH_START_SCAN_DELAY = 500
@@ -43,32 +47,6 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
     init {
 
         context = reactContext
-
-        val bluetoothStateChangeReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val action = intent.action
-
-                if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
-                    val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
-
-                    when (state) {
-                        BluetoothAdapter.STATE_OFF -> gtConnectionManager?.disconnect()
-
-                        BluetoothAdapter.STATE_ON -> {
-                            // We need to delay the starting of the scan because even though we got the
-                            // STATE_ON notification, the Bluetooth Adapter still needs some time
-                            // to actually be ready to use.
-                            val handler = Handler(Looper.getMainLooper())
-                            handler.postDelayed({ startBluetoothPairingIfPossible() }, BLUETOOTH_START_SCAN_DELAY.toLong())
-                        }
-                    }
-                }
-            }
-        }
-
-        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        context?.registerReceiver(bluetoothStateChangeReceiver, filter)
-
         context?.addLifecycleEventListener(this)
 
     }
@@ -121,12 +99,39 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
     @ReactMethod
     fun configure(apiKey: String, promise: Promise) {
         try {
+            //Log.d("GoTennaModule", "~~ Configuring with key "+apiKey)
             GoTenna.setApplicationToken(context?.getApplicationContext(), apiKey)
 
             bluetoothAdapterManager = BluetoothAdapterManager.getInstance()
             gtConnectionManager = GTConnectionManager.getInstance()
 
             gtConnectionManager?.addGtConnectionListener(this)
+
+
+            val bluetoothStateChangeReceiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    val action = intent.action
+
+                    if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+                        val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+
+                        when (state) {
+                            BluetoothAdapter.STATE_OFF -> gtConnectionManager?.disconnect()
+
+                            BluetoothAdapter.STATE_ON -> {
+                                // We need to delay the starting of the scan because even though we got the
+                                // STATE_ON notification, the Bluetooth Adapter still needs some time
+                                // to actually be ready to use.
+                                val handler = Handler(Looper.getMainLooper())
+                                handler.postDelayed({ startBluetoothPairingIfPossible() }, BLUETOOTH_START_SCAN_DELAY.toLong())
+                            }
+                        }
+                    }
+                }
+            }
+
+            val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+            context?.registerReceiver(bluetoothStateChangeReceiver, filter)
 
             configured = true
             emitConfigured()
@@ -138,11 +143,12 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
     }
 
     @ReactMethod
-    fun startPairingScan(rememberDevice: Boolean, promise: Promise) {
+    fun startPairingScan(rememberDevice: Boolean, isMeshDevice: Boolean, promise: Promise) {
         if(!configured) {
             return promise.reject("not_configured", "You must call configure (and wait till it completes) with an application token before using this module");
         }
         willRememberGotenna =  rememberDevice;
+        meshDevice = meshDevice;
         startBluetoothPairingIfPossible()
         promise.resolve(true)
     }
@@ -161,6 +167,31 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
             }
         })
         promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun disconnect(promise: Promise) {
+
+        gtConnectionManager?.disconnect()
+        promise.resolve(true);
+
+    }
+
+    @ReactMethod
+    fun echo(promise: Promise) {
+
+        // Send an echo command to the goTenna to flash the LED light
+        GTCommandCenter.getInstance().sendEchoCommand(GTCommand.GTCommandResponseListener { response ->
+
+            when (response.responseCode) {
+                GTDataTypes.GTCommandResponseCode.POSITIVE -> promise.resolve("postitive")
+                GTDataTypes.GTCommandResponseCode.NEGATIVE -> promise.resolve("negative")
+                GTDataTypes.GTCommandResponseCode.ERROR -> promise.resolve("error")
+            }
+
+        }, GTErrorListener {
+            promise.reject("echo_error", it.toString());
+        })
     }
 
     protected fun startBluetoothPairingIfPossible() {
@@ -185,7 +216,12 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
                         gtConnectionManager?.clearConnectedGotennaAddress()
                     }
 
-                    gtConnectionManager?.scanAndConnect()
+                    if(meshDevice) {
+                        gtConnectionManager?.scanAndConnect(GTConnectionManager.GTDeviceType.MESH)
+                    }
+                    else {
+                        gtConnectionManager?.scanAndConnect(GTConnectionManager.GTDeviceType.V1)
+                    }
 
                     handler.postDelayed(scanTimeoutRunnable, SCAN_TIMEOUT.toLong())
                 } else {

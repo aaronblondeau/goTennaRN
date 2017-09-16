@@ -139,7 +139,7 @@ dependencies {
     compile 'com.facebook.react:react-native:+'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
     // From node_modules
-    compile project(':gotenna-public-sdk')
+    compile project(':gotenna-sdk')
 }
 
 // Run this once to be able to run the application with BUCK

@@ -10,6 +10,7 @@ import { PermissionsAndroid } from 'react-native';
 
 class ApplicationState {
     @observable remember_paired_device = false;
+    @observable is_mesh_device = false;
     @observable scanning = false;
 
     @observable bluetooth_available = true;
@@ -42,7 +43,7 @@ class ApplicationState {
 
     @action scanForGoTennas() {
         this.pairing_timed_out = false;
-        GoTenna.startPairingScan(this.remember_paired_device)
+        GoTenna.startPairingScan(this.remember_paired_device, this.is_mesh_device)
         .then(() => {
             // Nothing to do here - state is updated by events
         })
@@ -50,6 +51,24 @@ class ApplicationState {
             alert("ERROR : "+error);
         });
 
+    }
+
+    @action disconnect() {
+        GoTenna.disconnect().then(() => {
+            this.paired = false;
+        })
+        .catch((err) => {
+            console.error(err);
+        });
+    }
+
+    @action echo() {
+        GoTenna.echo().then((result) => {
+            alert(result);
+        })
+        .catch((err) => {
+            console.error(err);
+        });
     }
 
 }
@@ -69,12 +88,21 @@ autorunAsync(() => {
     state.remember(state.remember_paired_device, 'remember_paired_device');
 }, 500);
 
+// Remember "is_mesh_device" state
+autorunAsync(() => {
+    state.remember(state.is_mesh_device, 'is_mesh_device');
+}, 500);
+
 // Restore remembered state
 loadInitialState = async () => {
     
     properties = [
         {
             "key": "remember_paired_device",
+            "postprocess": (value) => {return value == "true"}
+        },
+        {
+            "key": "is_mesh_device",
             "postprocess": (value) => {return value == "true"}
         },
     ];
@@ -133,11 +161,13 @@ DeviceEventEmitter.addListener('pairBluetoothDisabled', function(e) {
 DeviceEventEmitter.addListener('scanTimedOut', function(e) {
     console.log("~~ event scanTimedOut");
     state.pairing_timed_out = true;
+    state.scanning = false;
 });
 
 DeviceEventEmitter.addListener('pairSuccess', function(e) {
     console.log("~~ event pairSuccess");
     state.paired = true;
+    state.scanning = false;
 });
 
 DeviceEventEmitter.addListener('pairScanLocationPermissionNeeded', function(e) {
