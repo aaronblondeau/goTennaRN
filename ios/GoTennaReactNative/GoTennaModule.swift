@@ -7,16 +7,21 @@
 //
 
 import Foundation
+import GoTennaSDK
 
 @objc(goTenna)
 class goTenna: RCTEventEmitter {
   
   @objc open override func supportedEvents() -> [String] {
-    return ["pairBluetoothEnabled", "pairBluetoothDisabled", "pairShouldRetry", "pairSuccess", "scanTimedOut", "pairScanStop", "pairScanStart", "configured"]
+    return ["pairBluetoothEnabled", "pairBluetoothDisabled", "pairScanBluetoothNotAvaialble", "pairScanLocationPermissionNeeded", "pairShouldRetry", "pairSuccess", "scanTimedOut", "pairScanStop", "pairScanStart", "configured"]
   }
   
   @objc func configure(_ apiKey: NSString, resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
-    print("~~ Would configure with apiKey \(apiKey)")
+    print("~~ Will configure with apiKey \(apiKey)")
+    GoTenna.setApplicationToken(apiKey as String!)
+    self.sendEvent(withName: "configured", body: [:])
+    print("~~ Did configure with apiKey \(apiKey)")
+    resolve([:])
   }
   
   @objc func startPairingScan(_ rememberDevice: ObjCBool, isMeshDevice: ObjCBool, resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {

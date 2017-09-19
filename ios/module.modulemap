@@ -1,0 +1,4 @@
+module GoTennaSDK [system] {
+  header "/Users/aaronblondeau/Code/Mine/GoTennaReactNative/ios/GoTennaSDK.framework/Headers/GoTennaSDK.h"
+  export *
+}

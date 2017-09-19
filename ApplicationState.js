@@ -4,7 +4,7 @@ import {
     AsyncStorage,
     Platform
   } from 'react-native';
-import { DeviceEventEmitter } from 'react-native';
+import { NativeEventEmitter, DeviceEventEmitter } from 'react-native';
 import config from './config';
 import { PermissionsAndroid } from 'react-native';
 
@@ -80,7 +80,7 @@ GoTenna.configure(config.goTennaApplicationKey)
     state.gotenna_configured = true;
 })
 .catch((error) => {
-    console.error(error);
+    console.error("Failed to configure GoTennaSDK!", error);
 });
 
 // Remember "remember_paired_device" state
@@ -127,50 +127,55 @@ loadInitialState = async () => {
 }
 loadInitialState();
 
+// Works on Android, but not iOS
+// const goTennaEventEmitter = DeviceEventEmitter;
+const goTennaEventEmitter = new NativeEventEmitter(GoTenna);
+
+
 // Listen to events from GoTenna native module
-DeviceEventEmitter.addListener('pairScanStart', function(e) {
+goTennaEventEmitter.addListener('pairScanStart', function(e) {
     console.log("~~ event pairScanStart");
     state.scanning = true;
 });
 
-DeviceEventEmitter.addListener('pairScanStop', function(e) {
+goTennaEventEmitter.addListener('pairScanStop', function(e) {
     console.log("~~ event pairScanStop");
     state.scanning = false;
 });
 
-DeviceEventEmitter.addListener('pairScanBluetoothNotAvaialble', function(e) {
+goTennaEventEmitter.addListener('pairScanBluetoothNotAvaialble', function(e) {
     console.log("~~ event pairScanError");
     state.bluetooth_available = false;
 });
 
-DeviceEventEmitter.addListener('pairBluetoothEnabled', function(e) {
+goTennaEventEmitter.addListener('pairBluetoothEnabled', function(e) {
     console.log("~~ event pairBluetoothEnabled");
     state.bluetooth_enabled = true;
 });
 
-DeviceEventEmitter.addListener('pairShouldRetry', function(e) {
+goTennaEventEmitter.addListener('pairShouldRetry', function(e) {
     console.log("~~ event pairShouldRetry");
     state.scanForGoTennas()
 });
 
-DeviceEventEmitter.addListener('pairBluetoothDisabled', function(e) {
+goTennaEventEmitter.addListener('pairBluetoothDisabled', function(e) {
     console.log("~~ event pairBluetoothDisabled");
     state.bluetooth_enabled = false;
 });
 
-DeviceEventEmitter.addListener('scanTimedOut', function(e) {
+goTennaEventEmitter.addListener('scanTimedOut', function(e) {
     console.log("~~ event scanTimedOut");
     state.pairing_timed_out = true;
     state.scanning = false;
 });
 
-DeviceEventEmitter.addListener('pairSuccess', function(e) {
+goTennaEventEmitter.addListener('pairSuccess', function(e) {
     console.log("~~ event pairSuccess");
     state.paired = true;
     state.scanning = false;
 });
 
-DeviceEventEmitter.addListener('pairScanLocationPermissionNeeded', function(e) {
+goTennaEventEmitter.addListener('pairScanLocationPermissionNeeded', function(e) {
     console.log("~~ event pairScanLocationPermissionNeeded");
     if(Platform.OS === 'ios') {
         //TODO

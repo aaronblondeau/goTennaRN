@@ -311,7 +311,7 @@
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = GoTennaReactNative/main.m; sourceTree = "<group>"; };
 		146833FF1AC3E56700842450 /* React.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = React.xcodeproj; path = "../node_modules/react-native/React/React.xcodeproj"; sourceTree = "<group>"; };
 		15BD51EED8E642BAB1E13C25 /* Roboto_medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Roboto_medium.ttf; path = "../node_modules/native-base/Fonts/Roboto_medium.ttf"; sourceTree = "<group>"; };
-		1F892BF01F6DDDCC00BE6B55 /* GoTennaSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoTennaSDK.framework; path = ../GoTennaSDK.framework; sourceTree = "<group>"; };
+		1F3704401F71C27A00793769 /* module.modulemap */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		1F892C251F6DE07A00BE6B55 /* GoTennaReactNative-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "GoTennaReactNative-Bridging-Header.h"; sourceTree = "<group>"; };
 		1F892C261F6DE07A00BE6B55 /* GoTennaModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GoTennaModule.swift; path = GoTennaReactNative/GoTennaModule.swift; sourceTree = "<group>"; };
 		1F892C281F6DE20D00BE6B55 /* GoTennaModuleBridge.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GoTennaModuleBridge.m; sourceTree = "<group>"; };
@@ -498,6 +498,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		1F37043F1F71C23700793769 /* GoTennaSDK */ = {
+			isa = PBXGroup;
+			children = (
+				1F3704401F71C27A00793769 /* module.modulemap */,
+			);
+			name = GoTennaSDK;
+			sourceTree = "<group>";
+		};
 		5E91572E1DD0AC6500FF2AA8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -565,8 +573,8 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				1F37043F1F71C23700793769 /* GoTennaSDK */,
 				1F892C2A1F6DED0300BE6B55 /* GoTennaSDK.framework */,
-				1F892BF01F6DDDCC00BE6B55 /* GoTennaSDK.framework */,
 				13B07FAE1A68108700A75B9A /* GoTennaReactNative */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* GoTennaReactNativeTests */,
@@ -675,9 +683,11 @@
 				TargetAttributes = {
 					00E356ED1AD99517003FC87E = {
 						CreatedOnToolsVersion = 6.2;
+						DevelopmentTeam = YP26FHJ479;
 						TestTargetID = 13B07F861A680F5B00A75B9A;
 					};
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = YP26FHJ479;
 						LastSwiftMigration = 0830;
 					};
 					2D02E47A1E0B4A5D006451C7 = {
@@ -1111,6 +1121,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = YP26FHJ479;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -1133,6 +1144,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = YP26FHJ479;
 				INFOPLIST_FILE = GoTennaReactNativeTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -1153,6 +1165,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = NO;
+				DEVELOPMENT_TEAM = YP26FHJ479;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)";
 				INFOPLIST_FILE = GoTennaReactNative/Info.plist;
@@ -1163,6 +1176,7 @@
 					"-lc++",
 				);
 				PRODUCT_NAME = GoTennaReactNative;
+				SWIFT_INCLUDE_PATHS = /Users/aaronblondeau/Code/Mine/GoTennaReactNative/ios/;
 				SWIFT_OBJC_BRIDGING_HEADER = "GoTennaReactNative-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
@@ -1177,6 +1191,7 @@
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YP26FHJ479;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)";
 				INFOPLIST_FILE = GoTennaReactNative/Info.plist;
@@ -1187,6 +1202,7 @@
 					"-lc++",
 				);
 				PRODUCT_NAME = GoTennaReactNative;
+				SWIFT_INCLUDE_PATHS = /Users/aaronblondeau/Code/Mine/GoTennaReactNative/ios/;
 				SWIFT_OBJC_BRIDGING_HEADER = "GoTennaReactNative-Bridging-Header.h";
 				SWIFT_VERSION = 3.0;
 				VERSIONING_SYSTEM = "apple-generic";
