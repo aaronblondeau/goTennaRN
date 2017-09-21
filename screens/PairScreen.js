@@ -25,6 +25,11 @@ export default class PairScreen extends Component {
                       <Label>Remember goTenna</Label>
                       <Switch disabled={applicationState.scanning || applicationState.paired} onValueChange={(value) => applicationState.remember_paired_device = value} value={applicationState.remember_paired_device}></Switch>
                   </Item>
+
+                  <Item style={{margin: 10}} inlineLabel>
+                      <Label>Look for Mesh Device</Label>
+                      <Switch disabled={applicationState.scanning || applicationState.paired} onValueChange={(value) => applicationState.is_mesh_device = value} value={applicationState.is_mesh_device}></Switch>
+                  </Item>
               </Form>
               
               <Button style={{margin: 10}} block disabled={!applicationState.gotenna_configured || applicationState.scanning || applicationState.paired} onPress={() => applicationState.scanForGoTennas() }>

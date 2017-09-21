@@ -71,8 +71,12 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
             emit("pairShouldRetry")
         }
 
-        fun emitPairSuccess() {
-            emit("pairSuccess")
+        fun emitConnected() {
+            emit("connected")
+        }
+
+        fun emitDisconnected() {
+            emit("disconnected")
         }
 
         fun emitScanTimedOut() {
@@ -148,7 +152,7 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
             return promise.reject("not_configured", "You must call configure (and wait till it completes) with an application token before using this module");
         }
         willRememberGotenna =  rememberDevice;
-        meshDevice = meshDevice;
+        meshDevice = isMeshDevice;
         startBluetoothPairingIfPossible()
         promise.resolve(true)
     }
@@ -160,13 +164,20 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
         }
         GTCommandCenter.getInstance().sendGetSystemInfo(GTCommandCenter.GTSystemInfoResponseListener { systemInfoResponseData ->
             // This is where you could retrieve info such at the goTenna's battery level and current firmware version
-            Toast.makeText(reactApplicationContext, systemInfoResponseData.toString(), Toast.LENGTH_LONG).show()
+            // Toast.makeText(reactApplicationContext, systemInfoResponseData.toString(), Toast.LENGTH_LONG).show()
+
+            val data = WritableNativeMap()
+            data.putDouble("battery", systemInfoResponseData.batteryLevel.toDouble())
+            data.putString("serial", systemInfoResponseData.goTennaSerialNumber)
+            data.putString("text", systemInfoResponseData.toString())
+
+            promise.resolve(data)
         }, object : GTErrorListener {
             override fun onError(error: GTError) {
                 Log.w(javaClass.simpleName, error.toString())
+                promise.reject("info_error", error.toString());
             }
         })
-        promise.resolve(true)
     }
 
     @ReactMethod
@@ -217,9 +228,11 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
                     }
 
                     if(meshDevice) {
+                        Log.d("GoTennaModule", "~~ scan and connect MESH.")
                         gtConnectionManager?.scanAndConnect(GTConnectionManager.GTDeviceType.MESH)
                     }
                     else {
+                        Log.d("GoTennaModule", "~~ scan and connect V1.")
                         gtConnectionManager?.scanAndConnect(GTConnectionManager.GTDeviceType.V1)
                     }
 
@@ -258,6 +271,7 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
     private val scanTimeoutRunnable = Runnable {
         stopScanning()
         emitScanTimedOut()
+        emitPairScanStop()
     }
 
     private fun stopScanning() {
@@ -277,7 +291,8 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
             GTConnectionManager.GTConnectionState.CONNECTED -> {
                 Log.d("GoTennaModule", "~~ GTConnectonState CONNECTED")
                 handler.removeCallbacks(scanTimeoutRunnable)
-                emitPairSuccess()
+                emitConnected()
+                emitPairScanStop()
             }
             GTConnectionManager.GTConnectionState.SCANNING -> {
                 Log.d("GoTennaModule", "~~ GTConnectonState SCANNING")
@@ -286,6 +301,7 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
             GTConnectionManager.GTConnectionState.DISCONNECTED -> {
                 Log.d("GoTennaModule", "~~ GTConnectonState DISCONNECTED")
                 emitPairScanStop()
+                emitDisconnected()
             }
         }
     }

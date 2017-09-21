@@ -33,8 +33,8 @@ class ApplicationState {
 
     @action getSystemInfo() {
         GoTenna.getSystemInfo()
-        .then(() => {
-            console.log("~~ getSystemInfo promise then")
+        .then((info) => {
+            alert("System Info "+JSON.stringify(info))
         })
         .catch((error) => {
             alert("ERROR : "+error);
@@ -169,9 +169,15 @@ goTennaEventEmitter.addListener('scanTimedOut', function(e) {
     state.scanning = false;
 });
 
-goTennaEventEmitter.addListener('pairSuccess', function(e) {
-    console.log("~~ event pairSuccess");
+goTennaEventEmitter.addListener('connected', function(e) {
+    console.log("~~ event connected");
     state.paired = true;
+    state.scanning = false;
+});
+
+goTennaEventEmitter.addListener('disconnected', function(e) {
+    console.log("~~ event disconnected");
+    state.paired = false;
     state.scanning = false;
 });
 
