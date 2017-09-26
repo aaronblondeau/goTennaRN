@@ -3,7 +3,7 @@ import {
   StyleSheet,
   Switch
 } from 'react-native';
-import { Container, Content, Button, Text, Form, Item, Label, Spinner } from 'native-base';
+import { Container, Content, Button, Text, Form, Item, Label, Input, Spinner } from 'native-base';
 
 import {observer} from 'mobx-react';
 import applicationState from '../ApplicationState'
@@ -66,6 +66,29 @@ export default class PairScreen extends Component {
                 <Button style={{margin: 10}} block info disabled={applicationState.scanning} onPress={() => applicationState.echo() }>
                     <Text>Echo</Text>
                 </Button>
+              }
+
+              {applicationState.paired &&
+              <Form>
+                <Item fixedLabel>
+                  <Label>GID</Label>
+                  <Input keyboardType="numeric" onChangeText={(text) => {applicationState.gid = parseInt(text)}} value={ !Number.isNaN(applicationState.gid) ? applicationState.gid+"" : "0" } />
+                </Item>
+                <Item fixedLabel>
+                  <Label>GID Name</Label>
+                  <Input onChangeText={(text) => {applicationState.gid_name = text}} value={applicationState.gid_name} />
+                </Item>
+              </Form>
+              }
+
+              {applicationState.paired && 
+                <Button style={{margin: 10}} block info onPress={() => applicationState.setGID() }>
+                    <Text>Set GID</Text>
+                </Button>
+              }
+
+              {applicationState.setting_gid && 
+                <Spinner />
               }
 
               {applicationState.paired &&

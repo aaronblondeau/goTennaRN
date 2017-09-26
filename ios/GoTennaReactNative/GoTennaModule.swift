@@ -80,6 +80,19 @@ class goTenna: RCTEventEmitter, GTPairingHandlerProtocol, BluetoothPairingProtoc
     
   }
   
+  @objc func setGID(_ gid: NSNumber, name: NSString, resolve:RCTPromiseResolveBlock, reject:@escaping RCTPromiseRejectBlock) {
+    var do_resolve = true;
+    commandCenter?.setgoTennaGID(gid, withUsername: name as String!) {(error) in
+      reject("echo_error", error?.localizedDescription, error)
+      print("~~ Failed to set GID to \(gid), \(name)!")
+      do_resolve = false;
+    }
+    if(do_resolve) {
+      print("~~ Success setting GID \(gid), \(name)")
+      resolve([:])
+    }
+  }
+  
   @objc func disconnect(_ resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
     print("~~ Would disconnect")
     pairingManager?.shouldReconnect = false

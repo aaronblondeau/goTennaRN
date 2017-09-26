@@ -151,7 +151,7 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
         if(!configured) {
             return promise.reject("not_configured", "You must call configure (and wait till it completes) with an application token before using this module");
         }
-        willRememberGotenna =  rememberDevice;
+        willRememberGotenna = rememberDevice;
         meshDevice = isMeshDevice;
         startBluetoothPairingIfPossible()
         promise.resolve(true)
@@ -178,6 +178,21 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
                 promise.reject("info_error", error.toString());
             }
         })
+    }
+
+    @ReactMethod
+    fun setGID(gid: Integer, name: String, promise: Promise) {
+        GTCommandCenter.getInstance().setGoTennaGID(gid.toLong(), name, GTCommand.GTCommandResponseListener { response ->
+
+            Log.d("GoTennaModule", "~~ Success setting GID "+gid+", "+name);
+            promise.resolve(true);
+
+        }, GTErrorListener {
+
+            Log.e("GoTennaModule", "Failed to set GID to "+gid+", "+name+"!")
+            promise.reject("echo_error", it.toString());
+        })
+
     }
 
     @ReactMethod

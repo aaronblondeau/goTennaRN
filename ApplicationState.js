@@ -20,6 +20,11 @@ class ApplicationState {
     @observable pairing_timed_out = false;
     @observable paired = false;
 
+    @observable setting_gid = false;
+    @observable gid_set = false;
+    @observable gid = 0;
+    @observable gid_name = "";
+
     remember = async (value, key) => {
         if(value) {
             try {
@@ -51,6 +56,23 @@ class ApplicationState {
             alert("ERROR : "+error);
         });
 
+    }
+
+    @action setGID() {
+        this.setting_gid = false;
+        this.gid_set = false;
+        if(this.gid && this.gid_name) {
+            GoTenna.setGID(this.gid, this.gid_name)
+            .then(() => {
+                this.setting_gid = false;
+                this.gid_set = true;
+            })
+            .catch((error) => {
+                this.setting_gid = false;
+                this.gid_set = false;
+                alert("ERROR : "+error);
+            });
+        }
     }
 
     @action disconnect() {
@@ -93,6 +115,15 @@ autorunAsync(() => {
     state.remember(state.is_mesh_device, 'is_mesh_device');
 }, 500);
 
+// Remember gid and gid_name state
+autorunAsync(() => {
+    state.remember(state.gid, 'gid');
+}, 500);
+
+autorunAsync(() => {
+    state.remember(state.gid_name, 'gid_name');
+}, 500);
+
 // Restore remembered state
 loadInitialState = async () => {
     
@@ -104,6 +135,19 @@ loadInitialState = async () => {
         {
             "key": "is_mesh_device",
             "postprocess": (value) => {return value == "true"}
+        },
+        {
+            "key": "gid",
+            "postprocess": (value) => {
+                var result = parseInt(value)
+                if(Number.isNaN(result)) {
+                    result = 1234;
+                }
+                return result
+            }
+        },
+        {
+            "key": "gid_name",
         },
     ];
 
