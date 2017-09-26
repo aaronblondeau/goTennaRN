@@ -25,6 +25,9 @@ class ApplicationState {
     @observable gid = 0;
     @observable gid_name = "";
 
+    @observable one_to_one_recipient_gid = 0;
+    @observable one_to_one_message = "";
+
     remember = async (value, key) => {
         if(value) {
             try {
@@ -93,6 +96,15 @@ class ApplicationState {
         });
     }
 
+    @action sendOneToOne() {
+        GoTenna.sendOneToOneMessage(self.one_to_one_recipient_gid, self.one_to_one_message).then(() => {
+            console.log("~~ sendOneToOne resolved")
+        })
+        .catch((err) => {
+            console.error(err);
+        });
+    }
+
 }
 const state = new ApplicationState()
 
@@ -118,10 +130,12 @@ autorunAsync(() => {
 // Remember gid and gid_name state
 autorunAsync(() => {
     state.remember(state.gid, 'gid');
+    state.remember(state.gid_name, 'gid_name');
 }, 500);
 
+// Remember last one_to_one_recipient_gid
 autorunAsync(() => {
-    state.remember(state.gid_name, 'gid_name');
+    state.remember(state.one_to_one_recipient_gid, 'one_to_one_recipient_gid');
 }, 500);
 
 // Restore remembered state
@@ -148,6 +162,9 @@ loadInitialState = async () => {
         },
         {
             "key": "gid_name",
+        },
+        {
+            "key": "one_to_one_recipient_gid",
         },
     ];
 

@@ -21,6 +21,9 @@ export default class HomeScreen extends Component {
               <Button style={{margin: 10}} block onPress={() => navigate('Pair') }>
                   <Text>Pair With goTenna</Text>
               </Button>
+              <Button style={{margin: 10}} block onPress={() => navigate('Message') }>
+                  <Text>Messages</Text>
+              </Button>
           </Content>
       </Container>
     );

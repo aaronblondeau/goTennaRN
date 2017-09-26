@@ -16,6 +16,8 @@ class goTenna: RCTEventEmitter, GTPairingHandlerProtocol, BluetoothPairingProtoc
   var pairingManager = GTPairingManager.shared()
   var commandCenter = GTCommandCenter.shared()
   
+  let MIN_TLV = 2
+  
   var connected = false
   
   @objc open override func supportedEvents() -> [String] {
@@ -28,6 +30,118 @@ class goTenna: RCTEventEmitter, GTPairingHandlerProtocol, BluetoothPairingProtoc
     self.sendEvent(withName: "configured", body: [:])
     print("~~ Did configure with apiKey \(apiKey)")
     resolve([:])
+    commandCenter?.onIncomingMessage = {(response) in
+
+      let tlvSections : [TLVSection] = TLVSection.tlvSections(from: response?.commandData)
+      if(tlvSections.count < self.MIN_TLV) {
+        // Bad message
+        return
+      }
+      
+      let messageData : GTBaseMessageData = GTBaseMessageData.init(incoming: tlvSections, withSenderGID: response?.senderGID)
+      
+      switch messageData.messageType {
+      case kMessageTypeTextOnly:
+        print("~~ Got a text message")
+        let msg = GTTextOnlyMessageData.init(fromOrderedData: tlvSections, withSenderGID: response?.senderGID)
+        let gidType : GTGIDType = GIDManager.gidType(forGID: msg?.addresseeGID)
+        switch gidType {
+        case ShoutGID:
+          print("~~ Text message is a shout : \(msg?.text)")
+        case OneToOneGID:
+          print("~~ Text message is a one to one message : \(msg?.text)")
+        case GroupGID:
+          print("~~ Text message is a group message : \(msg?.text)")
+        default:
+          print("~~ unknown GTGIDType!")
+        }
+        
+      case kMessageTypeSetGroupGID:
+        print("~~ Got a group message")
+        GTGroupCreationMessageData.init(fromOrderedData: tlvSections, withSenderGID: response?.senderGID)
+        
+      case kMessageTypeFirmwarePublicKeyResponse:
+        print("~~ Firmware public key response")
+        let msg = GTPublicKeyFirmwareResponseMessageData.init(fromOrderedData: tlvSections, withSenderGID: response?.senderGID)
+        let keyManager = PublicKeyManager.shared()
+        keyManager?.addPublicKey(withGID: msg!.senderGID, publicKeyData: msg?.publicKey, userHasMyPublicKey: true)
+        GTDecryptionErrorManager.shared().attemptToDecryptMessagesAgain()
+        
+      case kMessageTypeUserPublicKeyResponse:
+        print("~~ Public key response")
+        let msg = GTPublicKeyUserResponseMessageData.init(fromOrderedData: tlvSections, withSenderGID: response?.senderGID)
+        let keyManager = PublicKeyManager.shared()
+        keyManager?.addPublicKey(withGID: msg?.senderGID, publicKeyData: msg?.publicKey)
+        
+      case kMessageTypePublicKeyRequest:
+        print("~~ Public key request")
+        let msg = GTPublicKeyRequestMessageData.init(fromOrderedData: tlvSections, withSenderGID: response?.senderGID)
+        self.commandCenter?.sendPublicKeyResponse(toGID: msg?.senderGID)
+        GTDecryptionErrorManager.shared().attemptToDecryptMessagesAgain()
+        
+      case kMessageTypeMeshPublicKeyRequest:
+        print("~~ Mesh public key request")
+        let msg = GTMeshPublicKeyRequestMessageData.init(fromOrderedData: tlvSections, withSenderGID: response?.senderGID)
+        let keyManager = PublicKeyManager.shared()
+        keyManager?.addPublicKey(withGID: msg?.senderGID, publicKeyData: msg?.publicKey)
+        self.commandCenter?.sendMyMeshPublicKey(toGID: msg?.senderGID)
+        GTDecryptionErrorManager.shared().attemptToDecryptMessagesAgain()
+        
+      case kMessageTypeMeshPublicKeyResponse:
+        print("~~ Mesh public key response")
+        let msg = GTMeshPublicKeyResponseMessageData.init(fromOrderedData: tlvSections, withSenderGID: response?.senderGID)
+        self.resendMessagesFromPreKeyExchange(msg: msg!)
+        GTDecryptionErrorManager.shared().attemptToDecryptMessagesAgain()
+        
+      default:
+        print("~~ Uknown message type")
+      }
+    }
+  }
+  
+  func resendMessagesFromPreKeyExchange(msg: GTMeshPublicKeyResponseMessageData) {
+    let senderGID = msg.senderGID
+    let publicKey = msg.publicKey
+    let keyManager = PublicKeyManager.shared()
+    
+    keyManager?.addPublicKey(withGID: senderGID, publicKeyData: publicKey)
+    keyManager?.setPublicKeyStateWithGID(senderGID, userHasMyPublicKey: true)
+    
+    if(commandCenter?.hasPostKeyExchangeMeshMessagesToResend())! {
+      return
+    }
+    
+    var messagesToSend : [GTSendCommand] = [GTSendCommand]()
+    
+    let messagesA = commandCenter?.meshMessageToResendList
+    if let countA = messagesA?.count {
+      for i in 0..<countA {
+        if let sendMessageCommand : GTSendCommand = messagesA?[i] as? GTSendCommand {
+          if(sendMessageCommand.recipientGID == senderGID) {
+            sendMessageCommand.invalidateTimeout()
+            sendMessageCommand.responseReceived = true
+            messagesToSend.append(sendMessageCommand)
+          }
+        }
+      }
+    }
+    
+    commandCenter?.meshMessageToResendList.removeObjects(in: messagesToSend)
+    
+    for sendMessageCommand : GTSendCommand in messagesToSend {
+      commandCenter?.sendMessage(sendMessageCommand.outgoingData, toGID: sendMessageCommand.recipientGID, fromGID: sendMessageCommand.senderGID, onResponse: { (res) in
+        sendMessageCommand.processResponse(res)
+      }, onError: sendMessageCommand.onError)
+    }
+    
+    let removedCommands : [GTSendCommand] = (commandCenter?.removedKeyExchangeMessagesRetrieval(withGID: senderGID))!
+    
+    for sendMessageCommand in removedCommands {
+      commandCenter?.sendMessage(sendMessageCommand.outgoingData, toGID: sendMessageCommand.recipientGID, fromGID: sendMessageCommand.senderGID, onResponse: { (res) in
+        sendMessageCommand.processResponse(res)
+      }, onError: sendMessageCommand.onError)
+    }
+    
   }
   
   @objc func startPairingScan(_ rememberDevice: ObjCBool, isMeshDevice: ObjCBool, resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
@@ -57,6 +171,28 @@ class goTenna: RCTEventEmitter, GTPairingHandlerProtocol, BluetoothPairingProtoc
         self.sendEvent(withName: "scanTimedOut", body: [:])
         self.sendEvent(withName: "pairScanStop", body: [:])
       }
+    }
+    
+  }
+  
+  @objc func sendOneToOneMessage(_ gid: NSNumber, text: NSString, resolve:@escaping RCTPromiseResolveBlock, reject:@escaping RCTPromiseRejectBlock) {
+    
+    let fromGID = UserDataStore.shared().currentUser().gId
+    
+    do {
+      let messageData : GTTextOnlyMessageData = try GTTextOnlyMessageData.init(outgoingWithText: text as String!)
+      
+      commandCenter?.sendMessage(messageData.serializeToBytes(), toGID: gid, fromGID: fromGID, onResponse: { (res) in
+        print("~~ sendOneToOneMessage - got response : \(res?.responsePositive())")
+        resolve([:])
+      }, onError: { (error) in
+        print("~~ sendOneToOneMessage - got error : \(error.debugDescription)")
+        reject("send_one_to_one_error", error?.localizedDescription, error)
+      })
+      
+    }
+    catch {
+      return reject("send_one_to_one_error", error.localizedDescription, error)
     }
     
   }

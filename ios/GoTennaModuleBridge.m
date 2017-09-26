@@ -17,6 +17,6 @@ RCT_EXTERN_METHOD(getSystemInfo:(RCTPromiseResolveBlock)resolve reject:(RCTPromi
 RCT_EXTERN_METHOD(disconnect:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(echo:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(setGID:(nonnull NSNumber)gid name:(NSString)name resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
-
+RCT_EXTERN_METHOD(sendOneToOneMessage:(nonnull NSNumber)gid text:(NSString)text resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 
 @end
