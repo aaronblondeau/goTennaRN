@@ -23,14 +23,19 @@ import com.gotenna.sdk.commands.GTCommandCenter
 import com.gotenna.sdk.commands.GTError
 import com.gotenna.sdk.exceptions.GTInvalidAppTokenException
 import com.gotenna.sdk.interfaces.GTErrorListener
+import com.gotenna.sdk.messages.GTBaseMessageData
+import com.gotenna.sdk.messages.GTGroupCreationMessageData
+import com.gotenna.sdk.messages.GTMessageData
+import com.gotenna.sdk.messages.GTTextOnlyMessageData
 import com.gotenna.sdk.responses.GTResponse
 import com.gotenna.sdk.types.GTDataTypes
+import com.gotenna.sdk.user.UserDataStore
 
 /**
  * Created by aaronblondeau on 8/30/17.
  */
 
-class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJavaModule(reactContext), GTConnectionManager.GTConnectionListener, LifecycleEventListener {
+class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJavaModule(reactContext), GTConnectionManager.GTConnectionListener, LifecycleEventListener, GTCommandCenter.GTMessageListener {
 
     private var willRememberGotenna = false
     private var meshDevice = true
@@ -43,6 +48,7 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
 
     var bluetoothAdapterManager: BluetoothAdapterManager? = null
     var gtConnectionManager: GTConnectionManager? = null
+    var userDataStore: UserDataStore? = null
 
     init {
 
@@ -108,6 +114,7 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
 
             bluetoothAdapterManager = BluetoothAdapterManager.getInstance()
             gtConnectionManager = GTConnectionManager.getInstance()
+            userDataStore = UserDataStore.getInstance()
 
             gtConnectionManager?.addGtConnectionListener(this)
 
@@ -137,6 +144,8 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
             val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
             context?.registerReceiver(bluetoothStateChangeReceiver, filter)
 
+            GTCommandCenter.getInstance().setMessageListener(this)
+
             configured = true
             emitConfigured()
             promise.resolve(true);
@@ -155,6 +164,37 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
         meshDevice = isMeshDevice;
         startBluetoothPairingIfPossible()
         promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun sendOneToOneMessage(gid: Integer, text: String, promise: Promise) {
+        val currentUser = userDataStore?.currentUser
+
+        if(currentUser == null) {
+            return promise.reject("send_one_to_one_error", "GID is not set!")
+        }
+
+        if(text == "") {
+            return promise.reject("send_one_to_one_error", "Text cannot be empty!")
+        }
+
+        if((gtConnectionManager != null) && (!gtConnectionManager!!.isConnected)) {
+            return promise.reject("send_one_to_one_error", "Device not connected!")
+        }
+
+        val msg : GTTextOnlyMessageData = GTTextOnlyMessageData(text)
+
+        GTCommandCenter.getInstance().sendMessage(msg.serializeToBytes(), gid.toLong(),GTCommand.GTCommandResponseListener { response ->
+
+            Log.d("GoTennaModule", "~~ Success sending one to one message!");
+            promise.resolve(true)
+
+        }, GTErrorListener {
+
+            Log.e("GoTennaModule", "~~ Failed to send one to one message : "+it.toString())
+            promise.reject("send_one_to_one_error", it.toString());
+        }, false)
+
     }
 
     @ReactMethod
@@ -333,6 +373,23 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
     override fun onHostResume() {
         Log.d("GoTennaModule", "~~ onHostResume")
         gtConnectionManager?.addGtConnectionListener(this)
+    }
+
+    override fun onIncomingMessage(gtBaseMessageData: GTBaseMessageData?) {
+        if (gtBaseMessageData is GTTextOnlyMessageData) {
+            val gtTextOnlyMessageData = gtBaseMessageData
+            Log.d("GoTennaModule", "~~ Message was receivied "+gtTextOnlyMessageData.text);
+        }
+        else if(gtBaseMessageData is GTGroupCreationMessageData) {
+            // TODO
+        }
+    }
+
+    override fun onIncomingMessage(messageData: GTMessageData?) {
+        // COMMENT FROM SAMPLE APP:
+        // We do not send any custom formatted messages in this app,
+        // but if you wanted to send out messages with your own format, this is where
+        // you would receive those messages.
     }
 
 }

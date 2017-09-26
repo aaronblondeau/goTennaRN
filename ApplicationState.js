@@ -29,13 +29,11 @@ class ApplicationState {
     @observable one_to_one_message = "";
 
     remember = async (value, key) => {
-        if(value) {
-            try {
-                await AsyncStorage.setItem('@ApplicationState:'+key, value+"");
-                console.log("~~ remembered "+key+" as "+value);
-            } catch (error) {
-                console.error(error.message);
-            }
+        try {
+            await AsyncStorage.setItem('@ApplicationState:'+key, value+"");
+            console.log("~~ remembered "+key+" as "+value);
+        } catch (error) {
+            console.error(error.message);
         }
     }
 
@@ -97,7 +95,7 @@ class ApplicationState {
     }
 
     @action sendOneToOne() {
-        GoTenna.sendOneToOneMessage(self.one_to_one_recipient_gid, self.one_to_one_message).then(() => {
+        GoTenna.sendOneToOneMessage(this.one_to_one_recipient_gid, this.one_to_one_message).then(() => {
             console.log("~~ sendOneToOne resolved")
         })
         .catch((err) => {
@@ -171,6 +169,7 @@ loadInitialState = async () => {
     for(var property of properties) {
         try {
             const value = await AsyncStorage.getItem('@ApplicationState:'+property.key);
+            console.log("~~ inflated "+property.key+" as "+value)
             if (value){
                 if(typeof property.postprocess === "function") {
                     state[property.key] = property.postprocess(value);
