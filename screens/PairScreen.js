@@ -14,6 +14,11 @@ export default class PairScreen extends Component {
     title: 'Pair With Device',
   });
 
+  componentDidMount() {
+    console.log("~~ PairScreen requesting state update");
+    applicationState.getState();
+  }
+
   render() {
     const { navigate } = this.props.navigation;
 

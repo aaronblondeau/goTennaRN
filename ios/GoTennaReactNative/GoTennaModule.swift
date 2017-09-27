@@ -175,6 +175,17 @@ class goTenna: RCTEventEmitter, GTPairingHandlerProtocol, BluetoothPairingProtoc
     
   }
   
+  @objc func getState(_ resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
+    
+    resolve([
+      //"paired": connectionManager?.isConnected() ?? false,
+      "paired": pairingManager?.connectingState() == Connected,
+      "gid": UserDataStore.shared().currentUser().gId,
+      "gid_name": UserDataStore.shared().currentUser().name
+    ])
+    
+  }
+  
   @objc func sendOneToOneMessage(_ gid: NSNumber, text: NSString, resolve:@escaping RCTPromiseResolveBlock, reject:@escaping RCTPromiseRejectBlock) {
     
     let fromGID = UserDataStore.shared().currentUser().gId
