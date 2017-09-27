@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import {
   StyleSheet,
-  Switch
+  Switch,
+  Platform
 } from 'react-native';
 import { Container, Content, Button, Text, Form, Item, Label, Input, Spinner } from 'native-base';
 
@@ -26,10 +27,12 @@ export default class PairScreen extends Component {
       <Container>
           <Content>
               <Form>
+                  { Platform.OS !== 'ios' &&
                   <Item style={{margin: 10}} inlineLabel>
                       <Label>Remember goTenna</Label>
                       <Switch disabled={applicationState.scanning || applicationState.paired} onValueChange={(value) => applicationState.remember_paired_device = value} value={applicationState.remember_paired_device}></Switch>
                   </Item>
+                  }
 
                   <Item style={{margin: 10}} inlineLabel>
                       <Label>Look for Mesh Device</Label>

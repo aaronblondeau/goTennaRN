@@ -29,6 +29,16 @@ class goTenna: RCTEventEmitter, GTPairingHandlerProtocol, BluetoothPairingProtoc
     GoTenna.setApplicationToken(apiKey as String!)
     self.sendEvent(withName: "configured", body: [:])
     print("~~ Did configure with apiKey \(apiKey)")
+    
+    // TODO :
+    /*
+    commandCenter?.sendSetGeoRegion(NORTH_AMERICA, onResponse: { (res) in
+      print("~~ Successfully set geo region")
+    }, onError: { (error) in
+      print("~~ Failed to set geo region!")
+    })
+    */
+    
     resolve([:])
     commandCenter?.onIncomingMessage = {(response) in
 
