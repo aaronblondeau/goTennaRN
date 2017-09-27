@@ -103,6 +103,18 @@ class ApplicationState {
         });
     }
 
+    @action getState() {
+        GoTenna.getState().then((state) => {
+            console.log("~~ got state "+JSON.stringify(state));
+            this.gid = state.gid;
+            this.gid_name = state.gid_name;
+            this.paired = state.paired;
+        })
+        .catch((err) => {
+            console.error(err);
+        });
+    }
+
 }
 const state = new ApplicationState()
 
@@ -183,6 +195,9 @@ loadInitialState = async () => {
             console.error(error.message);
         }
     }
+
+    // Get updated info from native side too!
+    state.getState();
 
 }
 loadInitialState();
