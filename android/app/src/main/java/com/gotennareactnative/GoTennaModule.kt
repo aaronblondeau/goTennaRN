@@ -156,6 +156,16 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
     }
 
     @ReactMethod
+    fun getState(promise: Promise) {
+        val data = WritableNativeMap()
+        val currentUser = userDataStore?.currentUser
+        data.putBoolean("paired", gtConnectionManager?.isConnected ?: false)
+        data.putInt("gid", currentUser?.gid?.toInt() ?: 0)
+        data.putString("gid_name", currentUser?.name ?: "")
+        promise.resolve(data)
+    }
+
+    @ReactMethod
     fun startPairingScan(rememberDevice: Boolean, isMeshDevice: Boolean, promise: Promise) {
         if(!configured) {
             return promise.reject("not_configured", "You must call configure (and wait till it completes) with an application token before using this module");
