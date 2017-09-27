@@ -21,6 +21,7 @@ import com.gotenna.sdk.bluetooth.GTConnectionManager
 import com.gotenna.sdk.commands.GTCommand
 import com.gotenna.sdk.commands.GTCommandCenter
 import com.gotenna.sdk.commands.GTError
+import com.gotenna.sdk.commands.Place
 import com.gotenna.sdk.exceptions.GTInvalidAppTokenException
 import com.gotenna.sdk.interfaces.GTErrorListener
 import com.gotenna.sdk.messages.GTBaseMessageData
@@ -118,6 +119,13 @@ class GoTennaModule(reactContext: ReactApplicationContext?) : ReactContextBaseJa
 
             gtConnectionManager?.addGtConnectionListener(this)
 
+            /*
+            GTCommandCenter.getInstance().sendSetGeoRegion(Place.NORTH_AMERICA, GTCommand.GTCommandResponseListener { response ->
+                Log.d("GoTennaModule", "~~ Success sending geo region");
+            }, GTErrorListener {
+                Log.e("GoTennaModule", "~~ Failed to set geo region!")
+            })
+            */
 
             val bluetoothStateChangeReceiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
